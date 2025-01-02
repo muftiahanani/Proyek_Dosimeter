@@ -1,0 +1,9 @@
+streamlit
+opencv-python
+opencv-contrib-python
+scikit-learn
+pandas
+numpy
+matplotlib
+joblib
+fpdf
