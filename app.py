@@ -56,6 +56,7 @@ def generate_pdf(sample_name, dose, features):
     pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt="Laporan Pembacaan Dosimeter", ln=True, align="C")
     pdf.ln(10)
+    pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt=f"Nama Sampel: {sample_name}", ln=True)
     pdf.cell(200, 10, txt=f"Dosis yang Diprediksi: {dose:.2f} Gy", ln=True)
     pdf.ln(10)
@@ -74,9 +75,11 @@ def visualize_features(dataset):
             x = dataset[feature].values.reshape(-1, 1)
             y = dataset['Dose']
 
+            # Membuat model regresi linear
             model = LinearRegression()
             model.fit(x, y)
 
+            # Plot hubungan fitur dengan dosis
             plt.figure(figsize=(8, 6))
             plt.scatter(x, y, color='blue', label='Data')
             plt.plot(x, model.predict(x), color='red', label='Regresi Linear')
@@ -87,6 +90,7 @@ def visualize_features(dataset):
             plt.grid()
             st.pyplot(plt)
 
+            # Menampilkan nilai R-squared dan persamaan regresi
             r2_score = model.score(x, y)
             slope = model.coef_[0]
             intercept = model.intercept_
@@ -96,42 +100,69 @@ def visualize_features(dataset):
     except Exception as e:
         st.error(f"Error in visualize_features: {e}")
 
-# Fungsi utama aplikasi
+# Main function untuk aplikasi
 def main():
     st.sidebar.title("Menu Navigasi")
-    menu = st.sidebar.selectbox("Pilih Menu", ["Beranda", "Unggah Sampel", "Analisis Fitur", "History", "Tentang", "Buat Metode Baru"])
+    menu = st.sidebar.selectbox("Pilih Menu", ["Beranda", "Unggah Sampel", "Analisis Fitur", "History", "Tentang"])
 
+
+    # Menu Beranda
     if menu == "Beranda":
         st.title("Aplikasi Dosimeter Film Reader")
-        st.write("Selamat datang di aplikasi Dosimeter Film Reader!")
+        st.write("""
+            Selamat datang di aplikasi Dosimeter Film Reader! Aplikasi ini dirancang untuk membaca film dosimeter menggunakan scanner standar dan teknologi machine learning.
+        """)
+        st.subheader("Siapa yang dapat menggunakan aplikasi ini?")
+        st.write("""
+            - **Laboratorium Radiasi**: Untuk memonitor paparan radiasi di lingkungan kerja.
+            - **Rumah Sakit dan Klinik Radiologi**: Untuk memantau dosis radiasi pasien dan staf medis.
+            - **Universitas dan Institusi Pendidikan**: Untuk penelitian dan pembelajaran terkait dosimetri.
+        """)
+        st.subheader("Perusahaan penggunakan teknologi e-beam atau X-ray")
+        st.write("""
+            - **Industri Sterilisasi**: Untuk proses sterilisasi alat medis atau bahan makanan.
+            - **Ekspor Makanan dan Buah**: Menggunakan teknologi e-beam atau X-ray untuk memastikan standar keamanan makanan sebelum diekspor.
+            - **Industri Farmasi**: Menggunakan e-beam atau X-ray untuk sterilisasi produk farmasi.
+        """)
+        st.write("""
+            Dengan pendekatan inovatif ini, aplikasi ini bertujuan untuk menyediakan solusi yang hemat biaya, efisien, dan mudah diakses bagi berbagai institusi.
+        """)
 
+
+    # Menu Unggah Sampel
     elif menu == "Unggah Sampel":
         st.title("Unggah Sampel")
-        model_data = load_model("model_random_forest.pkl")
-        model = model_data['model']
-        significant_features = model_data['features']
-        uploaded_file = st.file_uploader("Unggah gambar dosimeter", type=['jpg', 'png'])
-        if uploaded_file:
-            with open("temp_image.jpg", "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            dose, features = predict_dose("temp_image.jpg", model, significant_features)
-            if dose is not None:
-                st.write(f"Dosis yang diprediksi: {dose:.2f} Gy")
-                st.write("Fitur warna yang diekstraksi:")
-                st.json(features)
-                sample_name = st.text_input("Masukkan nama sampel:", value="Sampel 1")
-                if st.button("Unduh Laporan PDF"):
-                    pdf_path = generate_pdf(sample_name, dose, features)
-                    with open(pdf_path, "rb") as pdf_file:
-                        st.download_button(
-                            label="Klik untuk mengunduh laporan",
-                            data=pdf_file,
-                            file_name="laporan_dosimeter.pdf",
-                            mime="application/pdf",
-                        )
+        method = st.radio("Pilih metode analisis:", ["Pink Scheme", "Coming Soon"])
+        if method == "Pink Scheme":
+            model_data = load_model("model_random_forest.pkl")
+            model = model_data['model']
+            significant_features = model_data['features']
+            uploaded_file = st.file_uploader("Unggah gambar dosimeter", type=['jpg', 'png'])
+            if uploaded_file:
+                with open("temp_image.jpg", "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                dose, features = predict_dose("temp_image.jpg", model, significant_features)
+                if dose is not None:
+                    st.write(f"Dosis yang diprediksi: {dose:.2f} Gy")
+                    st.write("Fitur warna yang diekstraksi:")
+                    st.json(features)
+                    sample_name = st.text_input("Masukkan nama sampel:", value="Sampel 1")
+                    if st.button("Unduh Laporan PDF"):
+                        pdf_path = generate_pdf(sample_name, dose, features)
+                        with open(pdf_path, "rb") as pdf_file:
+                            st.download_button(
+                                label="Klik untuk mengunduh laporan",
+                                data=pdf_file,
+                                file_name="laporan_dosimeter.pdf",
+                                mime="application/pdf",
+                            )
+        else:
+            st.write("Metode ini akan segera hadir.")
 
+    # Menu Analisis Fitur
     elif menu == "Analisis Fitur":
         st.title("Analisis Fitur")
+        st.write("Visualisasi hubungan fitur warna dengan dosis radiasi.")
         dataset_path = "dataset_dosimeter.csv"
         try:
             dataset = pd.read_csv(dataset_path)
@@ -141,6 +172,7 @@ def main():
         except Exception as e:
             st.error(f"Error loading dataset: {e}")
 
+    # Menu History
     elif menu == "History":
         st.title("Riwayat Pembacaan")
         history_file = "history.csv"
@@ -151,38 +183,12 @@ def main():
             except Exception as e:
                 st.error("Belum ada data riwayat yang tersedia.")
 
+    # Menu Tentang
     elif menu == "Tentang":
         st.title("Tentang Aplikasi")
-        st.write("Aplikasi ini dibuat untuk membaca dosimeter film menggunakan teknologi machine learning.")
-
-    elif menu == "Buat Metode Baru":
-        st.title("Buat Metode Baru")
-        method_name = st.text_input("Nama Metode")
-        scanner_type = st.text_input("Jenis Scanner")
-        doses = st.text_input("Masukkan deret dosis (pisahkan dengan koma)", "1,2,3,4,5,6,7,8")
-
-        if st.button("Buat Metode"):
-            try:
-                dose_list = [float(d) for d in doses.split(",")]
-                st.write("Deret dosis berhasil diinput:", dose_list)
-                scan_data = []
-                for dose in dose_list:
-                    st.write(f"Scan untuk dosis {dose} kGy...")
-                    dummy_features = {"Red": np.random.uniform(0, 255),
-                                      "Green": np.random.uniform(0, 255),
-                                      "Blue": np.random.uniform(0, 255),
-                                      "Hue": np.random.uniform(0, 180),
-                                      "Saturation": np.random.uniform(0, 255),
-                                      "Value": np.random.uniform(0, 255)}
-                    dummy_features["Dose"] = dose
-                    scan_data.append(dummy_features)
-
-                df_scan_data = pd.DataFrame(scan_data)
-                file_path = f"dataset_{method_name.lower().replace(' ', '_')}.csv"
-                df_scan_data.to_csv(file_path, index=False)
-                st.write(f"Data hasil scan disimpan di {file_path}")
-            except Exception as e:
-                st.error(f"Terjadi kesalahan: {e}")
+        st.write("""
+            Aplikasi ini dibuat oleh MAV Studio untuk membaca dosimeter film dan memprediksi dosis radiasi berdasarkan fitur warna menggunakan teknologi machine learning. Versi 1.0.
+        """)
 
 if __name__ == "__main__":
     main()
